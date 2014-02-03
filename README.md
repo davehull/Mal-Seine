@@ -21,3 +21,6 @@ the box. This script takes a couple minutes per host.
 
 Average size of collected data is around 1.5 - 2 MiB with compression. Uncompressed data averages around 10 - 12MiB per
 host, but YMMV depending on what your hosts are doing.
+
+I've added a script to this repo for converting Windows multiline netstat -n -a -o -b output to a delimited format.
+Delimited data is easily stack ranked using Get-StakRank mentioned above.
