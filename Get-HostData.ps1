@@ -66,7 +66,7 @@ $arpout = $temp + "\" + $this_computer + "_arp.txt"
 
 # get netstat
 $netstatout = $temp + "\" + $this_computer + "_netstat.txt"
-& netstat -a -o -b | set-content -encoding ascii $netstatout
+& netstat -n -a -o -b | set-content -encoding ascii $netstatout
 
 
 # get handle
