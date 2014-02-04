@@ -78,7 +78,7 @@ Param(
                     $line = $line -replace '\t\*:\*\t', "`t*`t*`t"
                 }
                 if ($line.StartsWith("UDP")) {
-                    $line -match '.*(\t[0-9]+)$'
+                    $temp = $line -match '.*(\t[0-9]+)$'
                     $temp = "`tSTATELESS`t" + $($matches[1])
                     $line = $line -replace '\t[0-9]+$', $temp
                 }
