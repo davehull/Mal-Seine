@@ -77,6 +77,11 @@ Param(
                 if ($line -match '\t\*:\*\t') {
                     $line = $line -replace '\t\*:\*\t', "`t*`t*`t"
                 }
+                if ($line.StartsWith("UDP")) {
+                    $line -match '.*(\t[0-9]+)$'
+                    $temp = "`tSTATELESS`t" + $($matches[1])
+                    $line = $line -replace '\t[0-9]+$', $temp
+                }
                 $topline = $line
             } else { 
                 if ($line -match "^\[[-_a-zA-Z0-9.]+\.(exe|com|ps1)\]$" -and $component -eq $False) {
