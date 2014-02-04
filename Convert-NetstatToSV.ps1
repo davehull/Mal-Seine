@@ -119,7 +119,6 @@ Param(
 $Files  = Get-Files -FileNamePattern $FileNamePattern
 
 foreach ($File in $Files) {
-    # $data = $Header
     $data = Convert $File $Delimiter
     if ($tofile) {
         $path = ls $File
