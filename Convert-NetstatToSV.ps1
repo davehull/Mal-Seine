@@ -1,12 +1,7 @@
 <#
 .SYNOPSIS
 Convert-NetstatToSV.ps1 takes the output from netstat.exe -n -a -o -b and parses
-it into delimited format suitable for stack ranking via get-stakrank.ps1. This is
-a first effort and I may play around with it some more. I see some have converted
-netstat's output to an object and that's probably a better idea, it's easy to go
-from an object to delimited data with Powershell.
-
-I need to break out the IP/Host data from port for Local and Foreign addresses.
+it into delimited format suitable for stack ranking via get-stakrank.ps1.
 .PARAMETER FileNamePattern
 Specifies the naming pattern common to the netstat files to be converted.
 .PARAMETER Delimiter
@@ -62,7 +57,7 @@ Param(
     Write-Verbose "Entering $($MyInvocation.MyCommand)"
     Write-Verbose "Processing $File."
     $data = gc $File
-    "Proto`tLocal Address`tForeign Address`tState`tPId`tComponent`tExecutable"
+    "Proto`tLocal Address`tLocal Port`tForeign Address`tForeign Port`tState`tPId`tComponent`tExecutable"
     foreach($line in $data) {
        if ($line.length -gt 1 -and $line -notmatch "Active Connections|Proto  Local Address") {
             $line = $line.trim()
@@ -70,6 +65,15 @@ Param(
                 $topline
                 $component = $executable = $False
                 $line = $line -replace '\s+', $Delimiter
+                if ($line -match '[0-9a-z]*:[0-9a-z]*:[0-9a-z]*\]:') {
+                    $line = $line -replace "]:", "]`t"
+                } else {
+                    $line = $($($line -split ":") -split "`t") -join "`t"
+                } 
+                if ($line -match '(\t[-a-z0-9]+:[0-9]+\t)') {
+                    $temp = $($matches[1]) -replace ":", "`t"
+                    $line = $line -replace '\t[-a-z0-9]+:[0-9]+\t', $temp
+                }
                 $topline = $line
             } else { 
                 if ($line -match "^\[[-_a-zA-Z0-9.]+\.(exe|com|ps1)\]$" -and $component -eq $False) {
@@ -91,6 +95,7 @@ Param(
         }
     }
     $topline
+    Write-Verbose "Exiting $($MyInvocation.MyCommand)"
 }
 
 $Files = Get-Files -FileNamePattern $FileNamePattern
