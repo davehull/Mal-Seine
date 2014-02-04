@@ -57,52 +57,61 @@ Param(
     Write-Verbose "Entering $($MyInvocation.MyCommand)"
     Write-Verbose "Processing $File."
     $data = gc $File
-    "Proto`tLocal Address`tLocal Port`tForeign Address`tForeign Port`tState`tPId`tComponent`tExecutable"
+#    "Proto`tLocal Address`tLocal Port`tForeign Address`tForeign Port`tState`tPId`tComponent`tExecutable"
     foreach($line in $data) {
-       if ($line.length -gt 1 -and $line -notmatch "Active Connections|Proto  Local Address") {
+       if ($line.length -gt 1 -and $line -notmatch "Active |Proto ") {
             $line = $line.trim()
-            if ($line.StartsWith("TCP") -or $line.StartsWith("UDP")) {
-                $topline
-                $component = $executable = $False
-                $line = $line -replace '\s+', $Delimiter
-                if ($line -match '[0-9a-z]*:[0-9a-z]*:[0-9a-z%]*\]:') {
-                    $line = $line -replace "]:", "]`t"
-                } else {
-                    $line = $($($line -split ":") -split "`t") -join "`t"
-                } 
-                if ($line -match '(\t[-a-z0-9]+:[0-9]+\t)') {
-                    $temp = $($matches[1]) -replace ":", "`t"
-                    $line = $line -replace '\t[-a-z0-9]+:[0-9]+\t', $temp
+            if ($line.StartsWith("TCP")) {
+                $Protocol, $LocalAddress, $ForeignAddress, $State, $ConPId = ($line -split '\s{2,}')
+                $Component = $Executable = $False
+            } elseif ($line.StartsWith("UDP")) { 
+                $State = "STATELESS"
+                $Protocol, $LocalAddress, $ForeignAddress, $ConPid = ($line -split '\s{2,}')
+                $Component = $Executable = $False
+            } elseif ($line -match "^\[[-_a-zA-Z0-9.]+\.(exe|com|ps1)\]$") {
+                $Executable = $line
+                if ($Component -eq $False) {
+                    # No Component given
+                    $Component = $Executable
                 }
-                if ($line -match '\t\*:\*\t') {
-                    $line = $line -replace '\t\*:\*\t', "`t*`t*`t"
+            } elseif ($line -match "Can not obtain ownership information") {
+                $Executable = $Component = $line
+            } else {
+                # We have the $Component
+                $Component = $line
+            }
+            if ($State -match "TIME_WAIT") {
+                if ($Component -eq $False) {
+                    $Component = "Not provided"
                 }
-                if ($line.StartsWith("UDP")) {
-                    $temp = $line -match '.*(\t[0-9]+)$'
-                    $temp = "`tSTATELESS`t" + $($matches[1])
-                    $line = $line -replace '\t[0-9]+$', $temp
+                if ($Executable -eq $False) {
+                    $Executable = "Not provided"
                 }
-                $topline = $line
-            } else { 
-                if ($line -match "^\[[-_a-zA-Z0-9.]+\.(exe|com|ps1)\]$" -and $component -eq $False) {
-                    $component  = $line
-                    $executable = $line
-                    $topline += $Delimiter + ($component, $executable -join $Delimiter)
-                } elseif (!$component) {
-                    $component = $line
-                    $topline += $Delimiter + $component
-                } else {
-                    $executable = $line
-                    $topline += $Delimiter + $executable
-                }
-                if ($component -eq "Can not obtain ownership information") {
-                    $executable = $component
-                    $topline += $Delimiter + $executable
-                }
+            }
+            if ($Component -and $Executable) {
+                $LocalAddress, $LocalPort = Get-AddrPort($LocalAddress)
+                $ForeignAddress, $ForeignPort = Get-AddrPort($ForeignAddress)
+                ($Protocol, $LocalAddress, $LocalPort, $ForeignAddress, $ForeignPort, $State, $ConPid, $Component, $Executable) -join $Delimiter
             }
         }
     }
-    $topline
+    Write-Verbose "Exiting $($MyInvocation.MyCommand)"
+}
+
+function Get-AddrPort {
+Param(
+    [Parameter(Mandatory=$True,Position=0)]
+        [String]$AddrPort
+)
+    Write-Verbose "Entering $($MyInvocation.MyCommand)"
+    Write-Verbose "Processing $AddrPort"
+    if ($AddrPort -match '[0-9a-f]*:[0-9a-f]*:[0-9a-f%]*\]:[0-9]+') {
+        $Addr, $Port = $AddrPort -split "]:"
+        $Addr += "]"
+    } else {
+        $Addr, $Port = $AddrPort -split ":"
+    }
+    $Addr, $Port
     Write-Verbose "Exiting $($MyInvocation.MyCommand)"
 }
 
