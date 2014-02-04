@@ -2,6 +2,11 @@
 .SYNOPSIS
 Convert-NetstatToSV.ps1 takes the output from netstat.exe -n -a -o -b and parses
 it into delimited format suitable for stack ranking via get-stakrank.ps1.
+
+NOTE: This script is SPECIFICALLY WRITTEN to parse Windows netstat.exe output 
+WITH THE -a -o and -b ARGUMENTS! If your data set does not include these args, 
+this script's OUTPUT WILL BE WRONG! Yes, -n is optional, but recommended.
+
 .PARAMETER FileNamePattern
 Specifies the naming pattern common to the netstat files to be converted.
 .PARAMETER Delimiter
