@@ -65,7 +65,7 @@ Param(
                 $topline
                 $component = $executable = $False
                 $line = $line -replace '\s+', $Delimiter
-                if ($line -match '[0-9a-z]*:[0-9a-z]*:[0-9a-z]*\]:') {
+                if ($line -match '[0-9a-z]*:[0-9a-z]*:[0-9a-z%]*\]:') {
                     $line = $line -replace "]:", "]`t"
                 } else {
                     $line = $($($line -split ":") -split "`t") -join "`t"
@@ -73,6 +73,9 @@ Param(
                 if ($line -match '(\t[-a-z0-9]+:[0-9]+\t)') {
                     $temp = $($matches[1]) -replace ":", "`t"
                     $line = $line -replace '\t[-a-z0-9]+:[0-9]+\t', $temp
+                }
+                if ($line -match '\t\*:\*\t') {
+                    $line = $line -replace '\t\*:\*\t', "`t*`t*`t"
                 }
                 $topline = $line
             } else { 
