@@ -81,12 +81,8 @@ Param(
                 $Component = $line
             }
             if ($State -match "TIME_WAIT") {
-                if ($Component -eq $False) {
-                    $Component = "Not provided"
-                }
-                if ($Executable -eq $False) {
-                    $Executable = "Not provided"
-                }
+                $Component = "Not provided"
+                $Executable = "Not provided"
             }
             if ($Component -and $Executable) {
                 $LocalAddress, $LocalPort = Get-AddrPort($LocalAddress)
