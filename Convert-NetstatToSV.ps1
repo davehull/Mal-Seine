@@ -57,37 +57,37 @@ Param(
     Write-Verbose "Entering $($MyInvocation.MyCommand)"
     Write-Verbose "Processing $File."
     $data = gc $File
-#    "Proto`tLocal Address`tLocal Port`tForeign Address`tForeign Port`tState`tPId`tComponent`tExecutable"
+    ("Protocol","LocalAddress","LocalPort","ForeignAddress","ForeignPort","State","PId","Component","Process") -join $Delimiter
     foreach($line in $data) {
        if ($line.length -gt 1 -and $line -notmatch "Active |Proto ") {
             $line = $line.trim()
             if ($line.StartsWith("TCP")) {
                 $Protocol, $LocalAddress, $ForeignAddress, $State, $ConPId = ($line -split '\s{2,}')
-                $Component = $Executable = $False
+                $Component = $Process = $False
             } elseif ($line.StartsWith("UDP")) { 
                 $State = "STATELESS"
                 $Protocol, $LocalAddress, $ForeignAddress, $ConPid = ($line -split '\s{2,}')
-                $Component = $Executable = $False
+                $Component = $Process = $False
             } elseif ($line -match "^\[[-_a-zA-Z0-9.]+\.(exe|com|ps1)\]$") {
-                $Executable = $line
+                $Process = $line
                 if ($Component -eq $False) {
                     # No Component given
-                    $Component = $Executable
+                    $Component = $Process
                 }
             } elseif ($line -match "Can not obtain ownership information") {
-                $Executable = $Component = $line
+                $Process = $Component = $line
             } else {
                 # We have the $Component
                 $Component = $line
             }
             if ($State -match "TIME_WAIT") {
                 $Component = "Not provided"
-                $Executable = "Not provided"
+                $Process = "Not provided"
             }
-            if ($Component -and $Executable) {
+            if ($Component -and $Process) {
                 $LocalAddress, $LocalPort = Get-AddrPort($LocalAddress)
                 $ForeignAddress, $ForeignPort = Get-AddrPort($ForeignAddress)
-                ($Protocol, $LocalAddress, $LocalPort, $ForeignAddress, $ForeignPort, $State, $ConPid, $Component, $Executable) -join $Delimiter
+                ($Protocol, $LocalAddress, $LocalPort, $ForeignAddress, $ForeignPort, $State, $ConPid, $Component, $Process) -join $Delimiter
             }
         }
     }
@@ -111,9 +111,10 @@ Param(
     Write-Verbose "Exiting $($MyInvocation.MyCommand)"
 }
 
-$Files = Get-Files -FileNamePattern $FileNamePattern
+$Files  = Get-Files -FileNamePattern $FileNamePattern
 
 foreach ($File in $Files) {
+    # $data = $Header
     $data = Convert $File $Delimiter
     if ($tofile) {
         $path = ls $File
