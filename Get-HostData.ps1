@@ -73,6 +73,12 @@ $netstatout = $temp + "\" + $this_computer + "_netstat.txt"
 $handleout = $temp + "\" + $this_computer + "_handle.txt"
 & "$sharebin\handle.exe" /accepteula -a | set-content -encoding ascii $handleout
 
+
+# get image file execution options
+$imgexecopt = $temp + "\" + $this_computer + "_imgexecopt.txt"
+& reg query ""HKLM\software\microsoft\windows nt\currentversion\image file execution options" /s | set-content -encoding ascii $imgexecopt
+
+
 # check for locked files
 function Test-FileLock {
     param([parameter(Mandatory=$true)]
@@ -158,6 +164,9 @@ ziplock $zipfile
 ls $handleout  | add-zip $zipfile
 ziplock $zipfile
 
+ls $imgexecopt | add-zip $imgexecopt
+ziplock $imgexecopt
+
 copy $zipfile $sharename
 rm $dnsout
 rm $procout
@@ -166,5 +175,6 @@ rm $arpout
 rm $netstatout
 rm $arunsout
 rm $handleout
+rm $imgexecopt
 ziplock $zipfile
 rm $zipfile
