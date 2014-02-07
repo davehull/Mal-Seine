@@ -3,7 +3,7 @@
 Convert-HandleToSV.ps1 takes the output from Sysinternals handle.exe -a and parses
 it into delimited format suitable for stack ranking via get-stakrank.ps1.
 
-.NOTE
+NOTE:
 Handle Ids are discarded and remaining lines are deduped.
 
 .PARAMETER FileNamePattern
