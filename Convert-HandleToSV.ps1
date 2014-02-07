@@ -1,11 +1,10 @@
 <#
 .SYNOPSIS
 Convert-HandleToSV.ps1 takes the output from Sysinternals handle.exe -a and parses
-it into delimited format suitable for stack ranking via get-stakrank.ps1. 
+it into delimited format suitable for stack ranking via get-stakrank.ps1.
 
 .NOTE
-Rows having only Handle Ids and Types are discarded. Eventually rows will be deduped 
-without regard to Handle Id.
+Handle Ids are discarded and remaining lines are deduped.
 
 .PARAMETER FileNamePattern
 Specifies the naming pattern common to the handle file output to be converted.
@@ -63,7 +62,7 @@ Param(
     Write-Verbose "Entering $($MyInvocation.MyCommand)"
     Write-Verbose "Processing $File."
     $data = gc $File
-    ("Process","PId","Owner","HandleId","Type","Perms","Name") -join $Delimiter
+    ("Process","PId","Owner","Type","Perms","Name") -join $Delimiter
     foreach($line in $data) {
         if ($line -notmatch "^-{30,}|Handle v|Copyright \(C\) 1997|Sysinternals \- www\.") {
             $line = $line.Trim()
@@ -93,7 +92,8 @@ Param(
                         }
                     }
                     if ($Name -ne $null) {
-                        ($ProcessName,$ProcId,$Owner,$HandleId,$Type,$Perms,$Name) -join $Delimiter
+                        # ($ProcessName,$ProcId,$Owner,$HandleId,$Type,$Perms,$Name) -join $Delimiter
+                        ($ProcessName,$ProcId,$Owner,$Type,$Perms,$Name) -join $Delimiter
                     }
                 }
             }
@@ -105,5 +105,19 @@ $Files = Get-Files -FileNamePattern $FileNamePattern
 
 foreach ($File in $Files) {
     $data = Convert $File $Delimiter
-    $data
+    if ($tofile) {
+        $path = ls $File
+        $outpath = $path.DirectoryName + "\" + $path.BaseName
+        if ($Delimiter -eq "`t") {
+            $outpath += ".tsv"
+        } elseif ($Delimiter -eq ",") {
+            $outpath += ".csv"
+        } else {
+            $outpath += ".sv"
+        }
+        Write-Verbose "Writing output to ${outpath}."
+        $data | Select -Unique | Set-Content -Encoding Ascii $outpath
+    } else {
+        $data | Select -Unique
+    }
 }
