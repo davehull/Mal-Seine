@@ -17,14 +17,11 @@ What does the script collect:
 
 All output is copied to a zip archive for offline analysis.
 
-I have run this script or slight variations of it over 10s of 1000s of hosts at time and performed analysis beginning
-with stack ranking the data (see https://github.com/davehull/Get-StakRank#get-stakrank) and reviewing outliers. There 
-are commercial products that will gather much of this data, and in more robust ways, bypassing the WinAPI and scraping
-memory for process and networking artifacts, but those tools can take hours to run depending on the amount of RAM in 
-the box. This script takes a couple minutes per host.
+I have run this script or slight variations of it over 10s of 1000s of hosts at time and performed analysis beginning with stack ranking the data (see https://github.com/davehull/Get-StakRank#get-stakrank) and reviewing outliers. There are commercial products that will gather much of this data, and in more robust ways, bypassing the WinAPI and scraping memory for process and networking artifacts, but those tools can take hours to run depending on the amount of RAM in the box. This script takes a couple minutes per host.
 
 Average size of collected data is around 1.5 - 2 MiB with compression. Uncompressed data averages around 10 - 12MiB per
 host, but YMMV depending on what your hosts are doing.
 
-I've added a script to this repo for converting Windows multiline netstat -n -a -o -b output to a delimited format.
-Delimited data is easily stack ranked using Get-StakRank mentioned above.
+Some of the collected data doesn't immediately lend itself to easy analysis. You can use the conversion scripts to convert those data sets to delimited values that can be stack ranked, loaded into Excel, a database or other analysis tools. These include:
+  1. Convert-NetstatToSV.ps1
+  2. Convert-HandleToSV.ps1
