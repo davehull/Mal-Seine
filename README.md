@@ -11,8 +11,9 @@ What does the script collect:
   6. Netstat with process name and PID
   7. Open handles using Sysinternals Handle.exe
   8. ImageFileExecution Options
-  9. Service triggers
- 10. Bits Transfers
+  9. Bits Transfers
+  10. Service triggers
+  11. Service failures
 
 All output is copied to a zip archive for offline analysis.
 
