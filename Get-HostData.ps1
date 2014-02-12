@@ -9,6 +9,8 @@ What does the script collect:
   5. ARP Cache
   6. Netstat with process name and PID
   7. Open handles using Sysinternals Handle.exe
+  8. ImageFileExecution Options
+  9. Service triggers
   
 All output is copied to a zip archive for offline analysis.
 
@@ -75,8 +77,20 @@ $handleout = $temp + "\" + $this_computer + "_handle.txt"
 
 
 # get image file execution options
-$imgexecopt = $temp + "\" + $this_computer + "_imgexecopt.txt"
-& reg query ""HKLM\software\microsoft\windows nt\currentversion\image file execution options" /s | set-content -encoding ascii $imgexecopt
+$imgxoptout = $temp + "\" + $this_computer + "_imgexecopt.txt"
+& reg query ""HKLM\software\microsoft\windows nt\currentversion\image file execution options" /s | `
+  set-content -encoding ascii $imgexecopt
+  
+
+# get service triggers
+$svctrigout = $temp + "\" + $this_computer + "_svctriggers.txt"
+$($(foreach ($svc in (& c:\windows\system32\sc query)) { 
+  if ($svc -match "SERVICE_NAME:\s(.*)") {
+    & c:\windows\system32\sc qtriggerinfo $($matches[1])
+  }
+})|?{$_.length -gt 1 -and `
+    $_ -notmatch "\[SC\] QueryServiceConfig2 SUCCESS|has not registered for any" }) | `
+    set-content -encoding Ascii $svctriggers
 
 
 # check for locked files
@@ -164,8 +178,11 @@ ziplock $zipfile
 ls $handleout  | add-zip $zipfile
 ziplock $zipfile
 
-ls $imgexecopt | add-zip $imgexecopt
-ziplock $imgexecopt
+ls $imgxoptout | add-zip $zipfile
+ziplock $zipfile
+
+ls $svctrigout | add-zip $zipfile
+ziplock $zipfile
 
 copy $zipfile $sharename
 rm $dnsout
@@ -175,6 +192,7 @@ rm $arpout
 rm $netstatout
 rm $arunsout
 rm $handleout
-rm $imgexecopt
+rm $imgxoptout
+rm $svctrigout
 ziplock $zipfile
 rm $zipfile
