@@ -11,7 +11,8 @@ What does the script collect:
   7. Open handles using Sysinternals Handle.exe
   8. ImageFileExecution Options
   9. Service triggers
-  
+ 10. Bits Transfers
+ 
 All output is copied to a zip archive for offline analysis.
 
 I have run this script or slight variations of it over 10s of 1000s of hosts at a time and performed analysis beginning
@@ -80,6 +81,11 @@ $handleout = $temp + "\" + $this_computer + "_handle.txt"
 $imgxoptout = $temp + "\" + $this_computer + "_imgexecopt.txt"
 & reg query ""HKLM\software\microsoft\windows nt\currentversion\image file execution options" /s | `
   set-content -encoding ascii $imgexecopt
+  
+
+# get bits transfers
+$bitsxferout = $temp + "\" + $this_computer + "_bitsxfer.xml"
+Get-BitsTransfer -AllUsers | Export-Clixml $bitsxferout
   
 
 # get service triggers
@@ -184,6 +190,9 @@ ziplock $zipfile
 ls $svctrigout | add-zip $zipfile
 ziplock $zipfile
 
+ls $bitsxferout | add-zip $zipfile
+ziplock $zipfile
+
 copy $zipfile $sharename
 rm $dnsout
 rm $procout
@@ -194,5 +203,6 @@ rm $arunsout
 rm $handleout
 rm $imgxoptout
 rm $svctrigout
+rm $bitsxferout
 ziplock $zipfile
 rm $zipfile
