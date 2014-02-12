@@ -10,7 +10,10 @@ What does the script collect:
   5. ARP Cache
   6. Netstat with process name and PID
   7. Open handles using Sysinternals Handle.exe
-  
+  8. ImageFileExecution Options
+  9. Service triggers
+ 10. Bits Transfers
+
 All output is copied to a zip archive for offline analysis.
 
 I have run this script or slight variations of it over 10s of 1000s of hosts at time and performed analysis beginning
