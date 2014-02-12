@@ -79,7 +79,7 @@ $handleout = $temp + "\" + $this_computer + "_handle.txt"
 
 # get image file execution options
 $imgxoptout = $temp + "\" + $this_computer + "_imgexecopt.txt"
-& reg query ""HKLM\software\microsoft\windows nt\currentversion\image file execution options" /s | set-content -encoding ascii $imgexecopt
+& reg query "HKLM\software\microsoft\windows nt\currentversion\image file execution options" /s | set-content -encoding ascii $imgexecopt
   
 
 # get bits transfers
