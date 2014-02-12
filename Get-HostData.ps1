@@ -10,8 +10,9 @@ What does the script collect:
   6. Netstat with process name and PID
   7. Open handles using Sysinternals Handle.exe
   8. ImageFileExecution Options
-  9. Service triggers
- 10. Bits Transfers
+  9. Bits Transfers
+ 10. Service triggers
+ 11. Service failures
  
 All output is copied to a zip archive for offline analysis.
 
@@ -94,6 +95,14 @@ $($(foreach ($svc in (& c:\windows\system32\sc query)) {
     & c:\windows\system32\sc qtriggerinfo $($matches[1])
   }
 })|?{$_.length -gt 1 -and $_ -notmatch "\[SC\] QueryServiceConfig2 SUCCESS|has not registered for any" }) | set-content -encoding Ascii $svctrigout
+
+
+# get service failure
+$svcfailout = $temp + "\" + $this_computer + "_svcfailout.txt"
+$($(foreach ($svc in (& c:\windows\system32\sc query)) { 
+    if ($svc -match "SERVICE_NAME:\s(.*)") { 
+        & c:\windows\system32\sc qfailure $($matches[1])}})) | set-content -Encoding Ascii $svcfailout
+
 
 
 # check for locked files
@@ -183,10 +192,13 @@ ziplock $zipfile
 ls $imgxoptout | add-zip $zipfile
 ziplock $zipfile
 
+ls $bitsxferout | add-zip $zipfile
+ziplock $zipfile
+
 ls $svctrigout | add-zip $zipfile
 ziplock $zipfile
 
-ls $bitsxferout | add-zip $zipfile
+ls $svcfailout | add-zip $zipfile
 ziplock $zipfile
 
 copy $zipfile $sharename
@@ -198,7 +210,8 @@ rm $netstatout
 rm $arunsout
 rm $handleout
 rm $imgxoptout
-rm $svctrigout
 rm $bitsxferout
+rm $svctrigout
+rm $svcfailout
 ziplock $zipfile
 rm $zipfile
