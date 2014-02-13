@@ -1,9 +1,10 @@
 <#
 .SYNOPSIS
-Convert-SvcTrigsToSV.ps1 takes the output from Get-HostData.ps1's Service Trigger collection and parses it into delimited format suitable for stack ranking via get-stakrank.ps1.
+Convert-SvcTrigsToSV.ps1 takes the output from Get-HostData.ps1's Service Trigger collection and 
+parses it into delimited format suitable for stack ranking via get-stakrank.ps1.
 
 .PARAMETER FileNamePattern
-Specifies the naming pattern common to the handle file output to be converted.
+Specifies the naming pattern common to the files containing service trigger data to be converted.
 .PARAMETER Delimiter
 Specifies the delimiter character to use for output. Tab is default.
 .PARAMETER ToFile
