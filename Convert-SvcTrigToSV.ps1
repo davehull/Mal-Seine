@@ -62,28 +62,31 @@ Param(
     ("ServiceName","Action","Condition","Value") -join $Delimiter
     foreach($line in $data) {
         $line = $line.Trim()
-        if ($ServiceName -and $Action -and $Condition) {
-            if ($Value) {
-                ($ServiceName,$Action,$Condition,$Value) -join $Delimiter
-            } else {
-                ($ServiceName,$Action,$Condition,$null) -join $Delimiter
-            }
-        }
         if ($line -match "SERVICE_NAME:\s(?<SvcName>[-_A-Za-z0-9]+)") {
+            if ($ServiceName -and $Action -and $Condition) {
+                if ($Value) {
+                    ($ServiceName,$Action,$Condition,$Value) -join $Delimiter
+                } else {
+                    ($ServiceName,$Action,$Condition,$null) -join $Delimiter
+                }
+            }
             $ServiceName = $matches['SvcName']
             $Action = $Condition = $Value = $False
-        } elseif ($line -match "START SERVICE") {
-            $Action = "START SERVICE"
+        } elseif ($line -match "(START SERVICE|STOP SERVICE)") {
+            if ($ServiceName -and $Action -and $Condition) {
+                if ($Value) {
+                    ($ServiceName,$Action,$Condition,$Value) -join $Delimiter
+                } else {
+                    ($ServiceName,$Action,$Condition,$null) -join $Delimiter
+                }
+            }
+            $Action = ($matches[1])
             $Condition = $Value = $False
-        } elseif ($line -match "STOP SERVICE") {
-            $Action = "STOP SERVICE"
-            $Condition = $Value = $False
-        } elseif ($line -notmatch "DATA\s+") {
+        } elseif ($line -match "DATA\s+") {
+            $Value = $line -replace "\s+", " "
+        } else {
             $Condition = $line -replace "\s+", " "
             $Value = $False
-        } else {
-            $Value = $line -replace "\s+", " "
-            # ($ServiceName,$Action,$Condition,$Value) -join $Delimiter
         }
     }
     if ($Value) {
