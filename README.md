@@ -25,3 +25,4 @@ host, but YMMV depending on what your hosts are doing.
 Some of the collected data doesn't immediately lend itself to easy analysis. You can use the conversion scripts to convert those data sets to delimited values that can be stack ranked, loaded into Excel, a database or other analysis tools. These include:
   1. Convert-NetstatToSV.ps1
   2. Convert-HandleToSV.ps1
+  3. Convert-SvcTrigToSV.ps1
