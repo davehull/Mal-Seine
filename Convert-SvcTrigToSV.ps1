@@ -11,6 +11,9 @@ Specifies the delimiter character to use for output. Tab is default.
 .PARAMETER ToFile
 Specifies that output be written to a file matching the FileNamePattern (same path),
 but with .tsv or .csv extension depending on delimtier (.tsv is default).
+.PARAMETER NameProviders
+Looks up LogProviders names and where matches are found, replaces GUIDs with "friendly"
+names.
 #>
 
 [CmdletBinding()]
