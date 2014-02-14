@@ -1,10 +1,9 @@
 <#
 .SYNOPSIS
-Convert-SvcTrigsToSV.ps1 takes the output from Get-HostData.ps1's Service Trigger collection and 
-parses it into delimited format suitable for stack ranking via get-stakrank.ps1.
+Convert-SvcTrigsToSV.ps1 takes the output from Get-HostData.ps1's Service Trigger collection and parses it into delimited format suitable for stack ranking via get-stakrank.ps1.
 
 .PARAMETER FileNamePattern
-Specifies the naming pattern common to the files containing service trigger data to be converted.
+Specifies the naming pattern common to the handle file output to be converted.
 .PARAMETER Delimiter
 Specifies the delimiter character to use for output. Tab is default.
 .PARAMETER ToFile
@@ -19,7 +18,9 @@ Param(
     [Parameter(Mandatory=$False,Position=1)]
         [string]$Delimiter="`t",
     [Parameter(Mandatory=$False,Position=2)]
-        [switch]$tofile=$False
+        [switch]$tofile=$False,
+    [Parameter(Mandatory=$False,Position=3)]
+        [switch]$NameProviders=$False
 )
 
 function Get-Files {
@@ -48,17 +49,37 @@ Param(
     Write-Verbose "Exiting $($MyInvocation.MyCommand)"
 }
 
+function Get-LogProviderHash {
+    Write-Verbose "Entering $($MyInvocation.MyCommand)"
+    $LogProviders = @{}
+    foreach ($provider in (& $env:windir\system32\logman.exe query providers)) {
+        if ($provider -match "\{") {
+            $LogName, $LogGuid = ($provider -split "{") -replace "}"
+            $LogName = $LogName.Trim()
+            $LogGuid = $LogGuid.Trim()
+            if ($LogProviders.ContainsKey($LogGuid)) {} else {
+                Write-Verbose "Adding ${LogGuid}:${LogName} to `$LogProviders hash."
+                $LogProviders.Add($LogGuid, $LogName)
+            }
+        }
+    }
+    $LogProviders
+    Write-Verbose "Exiting $($MyInvocation.MyCommand)"
+}
 
 function Convert {
 Param(
     [Parameter(Mandatory=$True,Position=0)]
         [String]$File,
     [Parameter(Mandatory=$True,Position=1)]
-        [char]$Delimiter
+        [char]$Delimiter,
+    [Parameter(Mandatory=$False,Position=2)]
+        [hashtable]$LogProviders
 )
     Write-Verbose "Entering $($MyInvocation.MyCommand)"
     Write-Verbose "Processing $File."
     $ServiceName = $Action = $Condition = $Value = $False
+    $CondPattern = '(?<Desc>[-_ A-Za-z0-9]+)\s:\s(?<Guid>[-0-9a-fA-F]+)\s(?<Trailer>[-\[A-Za-z0-9 ]+\]*)'
     $data = gc $File
     ("ServiceName","Action","Condition","Value") -join $Delimiter
     foreach($line in $data) {
@@ -87,6 +108,16 @@ Param(
             $Value = $line -replace "\s+", " "
         } else {
             $Condition = $line -replace "\s+", " "
+            if ($LogProviders) {
+                $ProviderName = $False
+                if ($Condition -match $CondPattern) {
+                    $Guid = $($matches['Guid']).ToUpper()
+                    $ProviderName = $LogProviders.$Guid
+                    if ($ProviderName) {
+                        $Condition = ($matches['Desc'] + ": " + $LogProviders.$Guid + " " + $matches['Trailer'])
+                    }
+                }
+            }
             $Value = $False
         }
     }
@@ -97,10 +128,20 @@ Param(
     }
 }
 
+if ($NameProviders) {
+    $LogProviders = Get-LogProviderHash
+<#    $LogProviders
+    exit#>
+}
+
 $Files = Get-Files -FileNamePattern $FileNamePattern
 
 foreach ($File in $Files) {
-    $data = Convert $File $Delimiter
+    if ($LogProviders) {
+        $data = Convert $File $Delimiter $LogProviders
+    } else {
+        $data = Convert $File $Delimiter
+    }
     if ($tofile) {
         $path = ls $File
         $outpath = $path.DirectoryName + "\" + $path.BaseName
