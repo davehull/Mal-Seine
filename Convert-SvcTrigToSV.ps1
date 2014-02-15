@@ -119,7 +119,7 @@ Param(
                     $Guid = $($matches['Guid']).ToUpper()
                     $ProviderName = $LogProviders.$Guid
                     if ($ProviderName) {
-                        $Condition = ($matches['Desc'] + ": " + $LogProviders.$Guid + " " + $matches['Trailer'])
+                        $Condition = ($matches['Desc'] + ": " + $LogProviders.$Guid) #+ " " + $matches['Trailer'])
                     }
                 }
             }
