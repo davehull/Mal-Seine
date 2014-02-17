@@ -62,16 +62,12 @@ Param(
     $data = gc $File
     ("ServiceName","ResetPeriod","RebootMessage","CommandLine", "FailureAction1", "FailureAction2", "FailureAction3") -join $Delimiter
     foreach($line in $data) {
-        if ($FailAction3) {
-            ($ServiceName,$RstPeriod,$RebootMsg,$CmdLine,$FailAction1,$FailAction2,$FailAction3) -replace "False", $null -join $Delimiter
-            $ServiceName = $RstPeriod = $RebootMsg = $CmdLine = $FailAction1 = $FailAction2 = $FailAction3 = $False
-        }
         if ($line.StartsWith("[SC]")) {
             continue
         }
         $line = $line.Trim()
         if ($line -match "^S.*\:\s(?<SvcName>[-_A-Za-z0-9]+)") {
-            if ($FailAction2) {
+            if ($ServiceName) {
                 ($ServiceName,$RstPeriod,$RebootMsg,$CmdLine,$FailAction1,$FailAction2,$FailAction3) -replace "False", $null -join $Delimiter
                 $ServiceName = $RstPeriod = $RebootMsg = $CmdLine = $FailAction1 = $FailAction2 = $FailAction3 = $False
             }
@@ -93,6 +89,7 @@ Param(
             }
         }
     }
+    ($ServiceName,$RstPeriod,$RebootMsg,$CmdLine,$FailAction1,$FailAction2,$FailAction3) -replace "False", $null -join $Delimiter
 }
 
 $Files = Get-Files -FileNamePattern $FileNamePattern
