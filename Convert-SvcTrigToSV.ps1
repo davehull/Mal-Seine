@@ -90,22 +90,14 @@ Param(
     foreach($line in $data) {
         $line = $line.Trim()
         if ($line -match "SERVICE_NAME:\s(?<SvcName>[-_A-Za-z0-9]+)") {
-            if ($ServiceName -and $Action -and $Condition) {
-                if ($Value) {
-                    ($ServiceName,$Action,$Condition,$Value) -join $Delimiter
-                } else {
-                    ($ServiceName,$Action,$Condition,$null) -join $Delimiter
-                }
+            if ($ServiceName) {
+                ($ServiceName,$Action,$Condition,$Value) -replace "False", $null -join $Delimiter
             }
             $ServiceName = $matches['SvcName']
             $Action = $Condition = $Value = $False
         } elseif ($line -match "(START SERVICE|STOP SERVICE)") {
             if ($ServiceName -and $Action -and $Condition) {
-                if ($Value) {
-                    ($ServiceName,$Action,$Condition,$Value) -join $Delimiter
-                } else {
-                    ($ServiceName,$Action,$Condition,$null) -join $Delimiter
-                }
+                ($ServiceName,$Action,$Condition,$Value) -replace "False", $null -join $Delimiter
             }
             $Action = ($matches[1])
             $Condition = $Value = $False
@@ -126,11 +118,7 @@ Param(
             $Value = $False
         }
     }
-    if ($Value) {
-        ($ServiceName,$Action,$Condition,$Value) -join $Delimiter
-    } else {
-        ($ServiceName,$Action,$Condition,$null) -join $Delimiter
-    }
+    ($ServiceName,$Action,$Condition,$Value) -replace "False", $null -join $Delimiter
 }
 
 if ($NameProviders) {
