@@ -49,99 +49,56 @@ Param(
     Write-Verbose "Exiting $($MyInvocation.MyCommand)"
 }
 
-function Get-LogProviderHash {
-    Write-Verbose "Entering $($MyInvocation.MyCommand)"
-    $LogProviders = @{}
-    foreach ($provider in (& $env:windir\system32\logman.exe query providers)) {
-        if ($provider -match "\{") {
-            $LogName, $LogGuid = ($provider -split "{") -replace "}"
-            $LogName = $LogName.Trim()
-            $LogGuid = $LogGuid.Trim()
-            if ($LogProviders.ContainsKey($LogGuid)) {} else {
-                Write-Verbose "Adding ${LogGuid}:${LogName} to `$LogProviders hash."
-                $LogProviders.Add($LogGuid, $LogName)
-            }
-        }
-    }
-    $LogProviders
-    Write-Verbose "Exiting $($MyInvocation.MyCommand)"
-}
-
 function Convert {
 Param(
     [Parameter(Mandatory=$True,Position=0)]
         [String]$File,
     [Parameter(Mandatory=$True,Position=1)]
-        [char]$Delimiter,
-    [Parameter(Mandatory=$False,Position=2)]
-        [hashtable]$LogProviders
+        [char]$Delimiter
 )
     Write-Verbose "Entering $($MyInvocation.MyCommand)"
     Write-Verbose "Processing $File."
-    $ServiceName = $Action = $Condition = $Value = $False
-    $CondPattern = '(?<Desc>[-_ A-Za-z0-9]+)\s:\s(?<Guid>[-0-9a-fA-F]+)\s(?<Trailer>[-\[A-Za-z0-9 ]+\]*)'
+    $ServiceName = $RstPeriod = $RebootMsg = $CmdLine = $FailAction1 = $FailAction2 = $FailAction3 = $False
     $data = gc $File
-    ("ServiceName","Action","Condition","Value") -join $Delimiter
+    ("ServiceName","ResetPeriod","RebootMessage","CommandLine", "FailureAction1", "FailureAction2", "FailureAction3") -join $Delimiter
     foreach($line in $data) {
+        if ($FailAction3) {
+            ($ServiceName,$RstPeriod,$RebootMsg,$CmdLine,$FailAction1,$FailAction2,$FailAction3) -replace "False", $null -join $Delimiter
+            $ServiceName = $RstPeriod = $RebootMsg = $CmdLine = $FailAction1 = $FailAction2 = $FailAction3 = $False
+        }
+        if ($line.StartsWith("[SC]")) {
+            continue
+        }
         $line = $line.Trim()
-        if ($line -match "SERVICE_NAME:\s(?<SvcName>[-_A-Za-z0-9]+)") {
-            if ($ServiceName -and $Action -and $Condition) {
-                if ($Value) {
-                    ($ServiceName,$Action,$Condition,$Value) -join $Delimiter
-                } else {
-                    ($ServiceName,$Action,$Condition,$null) -join $Delimiter
-                }
+        if ($line -match "^S.*\:\s(?<SvcName>[-_A-Za-z0-9]+)") {
+            if ($FailAction2) {
+                ($ServiceName,$RstPeriod,$RebootMsg,$CmdLine,$FailAction1,$FailAction2,$FailAction3) -replace "False", $null -join $Delimiter
+                $ServiceName = $RstPeriod = $RebootMsg = $CmdLine = $FailAction1 = $FailAction2 = $FailAction3 = $False
             }
             $ServiceName = $matches['SvcName']
-            $Action = $Condition = $Value = $False
-        } elseif ($line -match "(START SERVICE|STOP SERVICE)") {
-            if ($ServiceName -and $Action -and $Condition) {
-                if ($Value) {
-                    ($ServiceName,$Action,$Condition,$Value) -join $Delimiter
-                } else {
-                    ($ServiceName,$Action,$Condition,$null) -join $Delimiter
-                }
+        } elseif ($line -match "^RESE.*\:\s(?<RstP>[0-9]+|INFINITE)") {
+            $RstPeriod = $matches['RstP']
+        } elseif ($line -match "^REB.*\:\s(?<RbtMsg>.*)") {
+            $RebootMsg = $matches['RbtMsg']
+        } elseif ($line -match "^C.*\:\s(?<Cli>.*)") {
+            $CmdLine = $matches['Cli']
+        } elseif ($line -match "^F.*\:\s(?<Fail1>.*)") {
+            $FailAction1 = $matches['Fail1']
+            $FailAction2 = $FailAction3 = $False
+        } elseif ($line -match "^(?<FailNext>REST.*)") {
+            if ($FailAction2) {
+                $FailAction3 = $matches['FailNext']
+            } else {
+                $FailAction2 = $matches['FailNext']
             }
-            $Action = ($matches[1])
-            $Condition = $Value = $False
-        } elseif ($line -match "DATA\s+") {
-            $Value = $line -replace "\s+", " "
-        } else {
-            $Condition = $line -replace "\s+", " "
-            if ($LogProviders) {
-                $ProviderName = $False
-                if ($Condition -match $CondPattern) {
-                    $Guid = $($matches['Guid']).ToUpper()
-                    $ProviderName = $LogProviders.$Guid
-                    if ($ProviderName) {
-                        $Condition = ($matches['Desc'] + ": " + $LogProviders.$Guid) #+ " " + $matches['Trailer'])
-                    }
-                }
-            }
-            $Value = $False
         }
     }
-    if ($Value) {
-        ($ServiceName,$Action,$Condition,$Value) -join $Delimiter
-    } else {
-        ($ServiceName,$Action,$Condition,$null) -join $Delimiter
-    }
-}
-
-if ($NameProviders) {
-    $LogProviders = Get-LogProviderHash
-<#    $LogProviders
-    exit#>
 }
 
 $Files = Get-Files -FileNamePattern $FileNamePattern
 
 foreach ($File in $Files) {
-    if ($LogProviders) {
-        $data = Convert $File $Delimiter $LogProviders
-    } else {
-        $data = Convert $File $Delimiter
-    }
+    $data = Convert $File $Delimiter
     if ($tofile) {
         $path = ls $File
         $outpath = $path.DirectoryName + "\" + $path.BaseName
