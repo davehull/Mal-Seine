@@ -183,9 +183,6 @@ ziplock $zipfile
 ls $handleout  | add-zip $zipfile
 ziplock $zipfile
 
-ls $imgxoptout | add-zip $zipfile
-ziplock $zipfile
-
 ls $bitsxferout | add-zip $zipfile
 ziplock $zipfile
 
@@ -203,7 +200,6 @@ rm $arpout
 rm $netstatout
 rm $arunsout
 rm $handleout
-rm $imgxoptout
 rm $bitsxferout
 rm $svctrigout
 rm $svcfailout
