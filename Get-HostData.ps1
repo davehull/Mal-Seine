@@ -9,10 +9,9 @@ What does the script collect:
   5. ARP Cache
   6. Netstat with process name and PID
   7. Open handles using Sysinternals Handle.exe
-  8. ImageFileExecution Options
-  9. Bits Transfers
- 10. Service triggers
- 11. Service failures
+  8. Bits Transfers
+  9. Service triggers
+ 10. Service failures
  
 All output is copied to a zip archive for offline analysis.
 
@@ -77,11 +76,6 @@ $netstatout = $temp + "\" + $this_computer + "_netstat.txt"
 $handleout = $temp + "\" + $this_computer + "_handle.txt"
 & "$sharebin\handle.exe" /accepteula -a | set-content -encoding ascii $handleout
 
-
-# get image file execution options
-$imgxoptout = $temp + "\" + $this_computer + "_imgexecopt.txt"
-& reg query "HKLM\software\microsoft\windows nt\currentversion\image file execution options" /s | set-content -encoding ascii $imgxoptout
-  
 
 # get bits transfers
 $bitsxferout = $temp + "\" + $this_computer + "_bitsxfer.xml"
