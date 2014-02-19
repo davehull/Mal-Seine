@@ -10,10 +10,9 @@ What does the script collect:
   5. ARP Cache
   6. Netstat with process name and PID
   7. Open handles using Sysinternals Handle.exe
-  8. ImageFileExecution Options
-  9. Bits Transfers
-  10. Service triggers
-  11. Service failures
+  8. Bits Transfers
+  9. Service triggers
+  10. Service failures
 
 All output is copied to a zip archive for offline analysis.
 
@@ -26,3 +25,5 @@ Some of the collected data doesn't immediately lend itself to easy analysis. You
   1. Convert-NetstatToSV.ps1
   2. Convert-HandleToSV.ps1
   3. Convert-SvcTrigToSV.ps1
+  4. Convert-SvcFailToSV.ps1
+  5. Convert-BitsToSV.ps1
