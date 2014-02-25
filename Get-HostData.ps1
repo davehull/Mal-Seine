@@ -12,6 +12,7 @@ What does the script collect:
   8. Bits Transfers
   9. Service triggers
  10. Service failures
+ 11. WMI Event Consumers
  
 All output is copied to a zip archive for offline analysis.
 
@@ -97,6 +98,10 @@ $($(foreach ($svc in (& c:\windows\system32\sc query)) {
     if ($svc -match "SERVICE_NAME:\s(.*)") { 
         & c:\windows\system32\sc qfailure $($matches[1])}})) | set-content -Encoding Ascii $svcfailout
 
+
+# get wmi event consumers
+$wmievtconsmr = $temp + "\" + $this_computer + "_wmievtconsmr.xml"
+get-wmiobject -namespace root\subscription -computername $this_computer -query "select * from __EventConsumer" | export-clixml $wmievtconsmr
 
 
 # check for locked files
@@ -192,6 +197,9 @@ ziplock $zipfile
 ls $svcfailout | add-zip $zipfile
 ziplock $zipfile
 
+ls $wmievtconsmr | add-zip $zipfile
+ziplock $zipfile
+
 copy $zipfile $sharename
 rm $dnsout
 rm $procout
@@ -203,5 +211,6 @@ rm $handleout
 rm $bitsxferout
 rm $svctrigout
 rm $svcfailout
+rm $wmievtconsmr
 ziplock $zipfile
 rm $zipfile
