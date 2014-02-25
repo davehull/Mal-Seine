@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
 Convert-NetstatToSV.ps1 takes the output from netstat.exe -n -a -o -b and parses
 it into delimited format suitable for stack ranking via get-stakrank.ps1.
