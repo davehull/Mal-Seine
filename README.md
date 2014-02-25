@@ -13,6 +13,7 @@ What does the script collect:
   8. Bits Transfers
   9. Service triggers
   10. Service failures
+  11. WMI Event Consumers
 
 All output is copied to a zip archive for offline analysis.
 
