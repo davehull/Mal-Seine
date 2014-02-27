@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
 Convert-SvcTrigsToSV.ps1 takes the output from Get-HostData.ps1's Service Trigger 
 collection and parses it into delimited format suitable for stack ranking via 
@@ -27,32 +27,6 @@ Param(
     [Parameter(Mandatory=$False,Position=3)]
         [switch]$NameProviders=$False
 )
-
-function Get-Files {
-<#
-.SYNOPSIS
-Returns the list of input files matching the user supplied file name pattern.
-Traverses subdirectories.
-#>
-Param(
-    [Parameter(Mandatory=$True,Position=0)]
-        [String]$FileNamePattern
-)
-    Write-Verbose "Entering $($MyInvocation.MyCommand)"
-    Write-Verbose "Looking for files matching user supplied pattern, $FileNamePattern"
-    Write-Verbose "This process traverses subdirectories so it may take some time."
-    $Files = @(ls -r $FileNamePattern | % { $_.FullName })
-    if ($Files) {
-        Write-Verbose "File(s) matching pattern, ${FileNamePattern}:`n$($Files -join "`n")"
-        $Files
-    } else {
-        Write-Error "No input files were found matching the user supplied pattern, `
-            ${FileNamePattern}."
-        Write-Verbose "Exiting $($MyInvocation.MyCommand)"
-        exit
-    }
-    Write-Verbose "Exiting $($MyInvocation.MyCommand)"
-}
 
 function Get-LogProviderHash {
     Write-Verbose "Entering $($MyInvocation.MyCommand)"
@@ -121,20 +95,15 @@ Param(
     ($ServiceName,$Action,$Condition,$Value) -replace "False", $null -join $Delimiter
 }
 
+. .\mal-seine-common.ps1
+
 if ($NameProviders) {
     $LogProviders = Get-LogProviderHash
-<#    $LogProviders
-    exit#>
-}
 
-$Files = Get-Files -FileNamePattern $FileNamePattern
+    $Files = Get-Files -FileNamePattern $FileNamePattern
 
-foreach ($File in $Files) {
-    if ($LogProviders) {
-        $data = Convert $File $Delimiter $LogProviders
-    } else {
-        $data = Convert $File $Delimiter
-    }
+    foreach ($File in $Files) {
+    $data = Convert $File $Delimiter $LogProviders
     if ($tofile) {
         $path = ls $File
         $outpath = $path.DirectoryName + "\" + $path.BaseName
@@ -150,4 +119,7 @@ foreach ($File in $Files) {
     } else {
         $data | Select -Unique
     }
+}
+} else {
+    Convert-Main -FileNamePattern $FileNamePattern -Delimiter $Delimiter -tofile $tofile
 }
