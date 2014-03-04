@@ -34,40 +34,38 @@ Param(
 )
     Write-Verbose "Entering $($MyInvocation.MyCommand)"
     Write-Verbose "Processing $File."
-    $data = gc $File
+    $data = gc $File | select -skip 6
     ("Process","PId","Owner","Type","Perms","Name") -join $Delimiter
     foreach($line in $data) {
-        if ($line -notmatch "^-{30,}|Handle v|Copyright \(C\) 1997|Sysinternals \- www\.") {
-            $line = $line.Trim()
-            if ($line -match " pid: ") {
-                $HandleId = $Type = $Perms = $Name = $null
-                $pattern = "(?<ProcessName>^[-a-zA-Z0-9_.]+) pid: (?<PId>\d+) (?<Owner>.+$)"
-                if ($line -match $pattern) {
-                    $ProcessName,$ProcId,$Owner = ($matches['ProcessName'],$matches['PId'],$matches['Owner'])
+        $line = $line.Trim()
+        if ($line -match " pid: ") {
+            $HandleId = $Type = $Perms = $Name = $null
+            $pattern = "(?<ProcessName>^[-a-zA-Z0-9_.]+) pid: (?<PId>\d+) (?<Owner>.+$)"
+            if ($line -match $pattern) {
+                $ProcessName,$ProcId,$Owner = ($matches['ProcessName'],$matches['PId'],$matches['Owner'])
+            }
+        } else {
+            $pattern = "(?<HandleId>^[a-f0-9]+): (?<Type>\w+)"
+            if ($line -match $pattern) {
+                $HandleId,$Type = ($matches['HandleId'],$matches['Type'])
+                $Perms = $Name = $null
+                switch ($Type) {
+                    "File" {
+                        $pattern = "(?<HandleId>^[a-f0-9]+):\s+(?<Type>\w+)\s+(?<Perms>\([-RWD]+\))\s+(?<Name>.*)"
+                        if ($line -match $pattern) {
+                            $Perms,$Name = ($matches['Perms'],$matches['Name'])
+                        }
+                    }
+                    default {
+                        $pattern = "(?<HandleId>^[a-f0-9]+):\s+(?<Type>\w+)\s+(?<Name>.*)"
+                        if ($line -match $pattern) {
+                            $Name = ($matches['Name'])
+                        }
+                    }
                 }
-            } else {
-                $pattern = "(?<HandleId>^[a-f0-9]+): (?<Type>\w+)"
-                if ($line -match $pattern) {
-                    $HandleId,$Type = ($matches['HandleId'],$matches['Type'])
-                    $Perms = $Name = $null
-                    switch ($Type) {
-                        "File" {
-                            $pattern = "(?<HandleId>^[a-f0-9]+):\s+(?<Type>\w+)\s+(?<Perms>\([-RWD]+\))\s+(?<Name>.*)"
-                            if ($line -match $pattern) {
-                                $Perms,$Name = ($matches['Perms'],$matches['Name'])
-                            }
-                        }
-                        default {
-                            $pattern = "(?<HandleId>^[a-f0-9]+):\s+(?<Type>\w+)\s+(?<Name>.*)"
-                            if ($line -match $pattern) {
-                                $Name = ($matches['Name'])
-                            }
-                        }
-                    }
-                    if ($Name -ne $null) {
-                        # ($ProcessName,$ProcId,$Owner,$HandleId,$Type,$Perms,$Name) -join $Delimiter
-                        ($ProcessName,$ProcId,$Owner,$Type,$Perms,$Name) -join $Delimiter
-                    }
+                if ($Name -ne $null) {
+                    # ($ProcessName,$ProcId,$Owner,$HandleId,$Type,$Perms,$Name) -join $Delimiter
+                    ($ProcessName,$ProcId,$Owner,$Type,$Perms,$Name) -join $Delimiter
                 }
             }
         }
