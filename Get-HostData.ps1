@@ -26,7 +26,8 @@ Average size of collected data is around 1.5 - 2 MiB with compression. Uncompres
 host, but YMMV depending on what your hosts are doing.
 #>
 
-$sharename = "\\CONFIGURE\THIS"
+# $sharename = "\\CONFIGURE\THIS"
+$sharename = ".\"
 # make a \bin\ dir in the share for latest version of Sysinternals autorunsc.exe and handle.exe 
 # available from http://technet.microsoft.com/en-us/sysinternals
 
@@ -42,10 +43,11 @@ $sharebin = $sharename + "\bin\"
 $temp = $env:temp
 $this_computer = $($env:COMPUTERNAME)
 $zipfile = $temp + "\" + $this_computer + "_bh.zip"
+$ErrorLog = $temp + "\" + $this_computer + "_error.log"
 
 # get autoruns
-$arunsout = $temp + "\" + $this_computer + "_aruns.csv"
-& "$sharebin\autorunsc.exe" /accepteula -a -c -v -f '*' | set-content -encoding ascii $arunsout
+# $arunsout = $temp + "\" + $this_computer + "_aruns.csv"
+# & "$sharebin\autorunsc.exe" /accepteula -a -c -v -f '*' | set-content -encoding ascii $arunsout
 
 
 # get dnscache
@@ -102,6 +104,23 @@ $($(foreach ($svc in (& c:\windows\system32\sc query)) {
 # get wmi event consumers
 $wmievtconsmr = $temp + "\" + $this_computer + "_wmievtconsmr.xml"
 get-wmiobject -namespace root\subscription -computername $this_computer -query "select * from __EventConsumer" | export-clixml $wmievtconsmr
+
+
+# get powershell profiles
+$alluserprofile = ($env:windir + "\System32\WindowsPowershell\v1.0\Microsoft.Powershell_profile.ps1")
+if (test-path $alluserprofile) {
+    $psalluserprofile = $temp + "\" + $this_computer + "_alluserprofile.txt"
+    gc $alluserprofile | set-content -encoding Ascii $psalluserprofile
+}
+
+$psuserprofiles = $temp + "\" + $this_computer + "_userprofiles.txt"
+$null | Set-Content -Encoding Ascii $psuserprofiles
+foreach($path in (gwmi win32_userprofile | select localpath -ExpandProperty localpath)) {
+    $prfile = ($path + "\Documents\WindowsPowershell\Microsoft.Powershell_profile.ps1")
+    if (Test-Path $prfile) {
+        $("Profile ${prfile}:"; gc $prfile) | Add-Content -Encoding Ascii $psuserprofiles
+    }
+}
 
 
 # check for locked files
@@ -166,51 +185,151 @@ function ziplock
     }
 }
 
+try {
+    if (Test-Path $dnsout -ErrorAction SilentlyContinue) {
+        ls $dnsout     | add-zip $zipfile
+        Write-Verbose "`$dnsout added"
+        ziplock $zipfile
+        rm $dnsout
+    }
+} catch { 
+    $_.Exception.Message | Add-Content $ErrorLog
+}
 
-ls $dnsout     | add-zip $zipfile
-ziplock $zipfile
+try {
+    if (Test-Path $procout -ErrorAction SilentlyContinue) {
+        ls $procout    | add-zip $zipfile
+        Write-Verbose "`$procout added"
+        ziplock $zipfile
+        rm $procout
+    }
+} catch { 
+    $_.Exception.Message | Add-Content $ErrorLog
+}
 
-ls $procout    | add-zip $zipfile
-ziplock $zipfile
+try {
+    if (Test-Path $tlist -ErrorAction SilentlyContinue) {
+        ls $tlist      | add-zip $zipfile
+        Write-Verbose "`$tlist added"
+        ziplock $zipfile
+        rm $tlist
+    }
+} catch { 
+    $_.Exception.Message | Add-Content $ErrorLog
+}
 
-ls $tlist      | add-zip $zipfile
-ziplock $zipfile
+try {
+    if (Test-Path $arpout -ErrorAction SilentlyContinue) {
+        ls $arpout     | add-zip $zipfile
+        Write-Verbose "`$arpout added"
+        ziplock $zipfile
+        rm $arpout
+    }
+} catch { 
+    $_.Exception.Message | Add-Content $ErrorLog
+}
 
-ls $arpout     | add-zip $zipfile
-ziplock $zipfile
+try {
+    if (Test-Path $netstatout -ErrorAction SilentlyContinue) {
+        ls $netstatout | add-zip $zipfile
+        Write-Verbose "`$netstatout added"
+        ziplock $zipfile
+        rm $netstatout
+    }
+} catch { 
+    $_.Exception.Message | Add-Content $ErrorLog
+}
 
-ls $netstatout | add-zip $zipfile
-ziplock $zipfile
+try {
+    if (Test-Path $arunsout -ErrorAction SilentlyContinue) {
+        ls $arunsout   | add-zip $zipfile
+        Write-Verbose "`$arunsout added"
+        ziplock $zipfile
+        rm $arunsout
+    }
+} catch { 
+    $_.Exception.Message | Add-Content $ErrorLog
+}
 
-ls $arunsout   | add-zip $zipfile
-ziplock $zipfile
+try {
+    if (Test-Path $handleout -ErrorAction SilentlyContinue) {
+        ls $handleout  | add-zip $zipfile
+        Write-Verbose "`$handleout added"
+        ziplock $zipfile
+        rm $handleout
+    }
+} catch { 
+    $_.Exception.Message | Add-Content $ErrorLog
+}
 
-ls $handleout  | add-zip $zipfile
-ziplock $zipfile
+try {
+    if (Test-Path $bitsxferout -ErrorAction SilentlyContinue) {
+        ls $bitsxferout | add-zip $zipfile
+        Write-Verbose "`$bitsxferout added"
+        ziplock $zipfile
+        rm $bitsxferout
+    }
+} catch { 
+    $_.Exception.Message | Add-Content $ErrorLog
+}
 
-ls $bitsxferout | add-zip $zipfile
-ziplock $zipfile
+try {
+    if (Test-Path $svctrigout -ErrorAction SilentlyContinue) {
+        ls $svctrigout | add-zip $zipfile
+        Write-Verbose "`$svctrigout added"
+        ziplock $zipfile
+        rm $svctrigout
+    }
+} catch { 
+    $_.Exception.Message | Add-Content $ErrorLog
+}
 
-ls $svctrigout | add-zip $zipfile
-ziplock $zipfile
+try {
+    if (Test-Path $svcfailout -ErrorAction SilentlyContinue) {
+        ls $svcfailout | add-zip $zipfile
+        Write-Verbose "`$svcfailout added"
+        ziplock $zipfile
+        rm $svcfailout
+    }
+} catch { 
+    $_.Exception.Message | Add-Content $ErrorLog
+}
 
-ls $svcfailout | add-zip $zipfile
-ziplock $zipfile
+try {
+    if (Test-Path $wmievtconsmr -ErrorAction SilentlyContinue) {
+        ls $wmievtconsmr | add-zip $zipfile
+        Write-Verbose "`$wmievtconsmr added"
+        ziplock $zipfile
+        rm $wmievtconsmr
+    }
+} catch { 
+    $_.Exception.Message | Add-Content $ErrorLog
+}
 
-ls $wmievtconsmr | add-zip $zipfile
-ziplock $zipfile
+try {
+    if (Test-Path $psalluserprofile -ErrorAction SilentlyContinue) {
+        ls $psalluserprofile | add-zip $zipfile
+        Write-Verbose "`$psalluserprofile added"
+        ziplock $zipfile
+        rm $psalluserprofile
+    }
+} catch { 
+    $_.Exception.Message | Add-Content $ErrorLog
+}
+
+try {
+    if (Test-Path $psuserprofiles -ErrorAction SilentlyContinue) {
+        ls $psuserprofiles | add-zip $zipfile
+        Write-Verbose "`$psuserprofiles added"
+        ziplock $zipfile
+        rm $psuserprofiles
+    } 
+} catch { 
+    $_.Exception.Message | Add-Content $ErrorLog
+}
 
 copy $zipfile $sharename
-rm $dnsout
-rm $procout
-rm $tlist
-rm $arpout
-rm $netstatout
-rm $arunsout
-rm $handleout
-rm $bitsxferout
-rm $svctrigout
-rm $svcfailout
-rm $wmievtconsmr
-ziplock $zipfile
+
+ls $ErrorLog | add-zip $zipfile
+ziplock $zipfile        
 rm $zipfile
