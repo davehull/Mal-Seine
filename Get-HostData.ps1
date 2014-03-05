@@ -13,6 +13,7 @@ What does the script collect:
   9. Service triggers
  10. Service failures
  11. WMI Event Consumers
+ 12. Powershell profiles
  
 All output is copied to a zip archive for offline analysis.
 
