@@ -15,6 +15,7 @@ What does the script collect:
   10. Service failures
   11. WMI Event Consumers
   12. Powershell profiles
+  13. Prefetch
 
 All output is copied to a zip archive for offline analysis.
 
