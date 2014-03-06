@@ -14,6 +14,7 @@ What does the script collect:
  10. Service failures
  11. WMI Event Consumers
  12. Powershell profiles
+ 13. Prefetch
  
 All output is copied to a zip archive for offline analysis.
 
@@ -27,8 +28,8 @@ Average size of collected data is around 1.5 - 2 MiB with compression. Uncompres
 host, but YMMV depending on what your hosts are doing.
 #>
 
-# $sharename = "\\CONFIGURE\THIS"
-$sharename = ".\"
+$sharename = "\\CONFIGURE\THIS"
+# $sharename = ".\"
 # make a \bin\ dir in the share for latest version of Sysinternals autorunsc.exe and handle.exe 
 # available from http://technet.microsoft.com/en-us/sysinternals
 
@@ -47,8 +48,8 @@ $zipfile = $temp + "\" + $this_computer + "_bh.zip"
 $ErrorLog = $temp + "\" + $this_computer + "_error.log"
 
 # get autoruns
-# $arunsout = $temp + "\" + $this_computer + "_aruns.csv"
-# & "$sharebin\autorunsc.exe" /accepteula -a -c -v -f '*' | set-content -encoding ascii $arunsout
+$arunsout = $temp + "\" + $this_computer + "_aruns.csv"
+& "$sharebin\autorunsc.exe" /accepteula -a -c -v -f '*' | set-content -encoding ascii $arunsout
 
 
 # get dnscache
@@ -122,6 +123,18 @@ foreach($path in (gwmi win32_userprofile | select localpath -ExpandProperty loca
         $("Profile ${prfile}:"; gc $prfile) | Add-Content -Encoding Ascii $psuserprofiles
     }
 }
+
+
+# get prefetch listing
+$pfconf = (gp "hklm:\system\currentcontrolset\control\session manager\memory management\prefetchparameters").EnablePrefetcher 
+switch -Regex ($pfconf) {
+    "[1-3]" {
+        $pffiles = $temp + "\" + $this_computer + "_pffiles.txt"
+        ls $env:windir\Prefetch\*.pf | Set-Content -Encoding Ascii $pffiles
+    }
+    default { }
+}
+
 
 
 # check for locked files
@@ -326,6 +339,17 @@ try {
         rm $psuserprofiles
     } 
 } catch { 
+    $_.Exception.Message | Add-Content $ErrorLog
+}
+
+try {
+    if (Test-path $pffiles -ErrorAction SilentlyContinue) {
+        ls $pffiles | add-zip $zipfile
+        Write-Verbose "`$pffiles added"
+        ziplock $zipfile
+        rm $pffiles
+    }
+} catch {
     $_.Exception.Message | Add-Content $ErrorLog
 }
 
