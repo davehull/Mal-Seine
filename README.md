@@ -12,10 +12,10 @@ What does the script collect:
   7. Netstat with process name and PID
   8. Autoruns using Sysinternals Autorunsc.exe
   9. Bits Transfers
- 10. Service Triggers
- 11. Service failures
- 12. WMI Event Consumers
- 13. Powershell profiles
+  10. Service Triggers
+  11. Service failures
+  12. WMI Event Consumers
+  13. Powershell profiles
 
 All output is copied to a zip archive for offline analysis.
 
