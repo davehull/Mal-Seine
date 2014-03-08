@@ -2,20 +2,20 @@
 .SYNOPSIS
 A reference script for collecting data from hosts in an organization when seining for evil.
 What does the script collect:
-  1. Autoruns using Sysinternals Autorunsc.exe
-  2. DNS Cache
-  3. Processes using Powershell Get-Process (includes modules, threads, etc.)
-  4. Processes using tasklist (includes owner)
-  5. ARP Cache
-  6. Netstat with process name and PID
-  7. Open handles using Sysinternals Handle.exe
-  8. Bits Transfers
-  9. Service triggers
- 10. Service failures
- 11. WMI Event Consumers
- 12. Powershell profiles
- 13. Prefetch
- 
+  1. Prefetch
+  2. Processes using Powershell Get-Process (includes modules, threads, etc.)
+  3. Processes using tasklist (includes owner)
+  4. Open handles using Sysinternals Handle.exe
+  5. DNS cache
+  6. ARP cache
+  7. Netstat with process name and PID
+  8. Autoruns using Sysinternals Autorunsc.exe
+  9. Bits Transfers
+ 10. Service Triggers
+ 11. Service failures
+ 12. WMI Event Consumers
+ 13. Powershell profiles
+  
 All output is copied to a zip archive for offline analysis.
 
 I have run this script or slight variations of it over 10s of 1000s of hosts at a time and performed analysis beginning
@@ -47,16 +47,16 @@ $this_computer = $($env:COMPUTERNAME)
 $zipfile = $temp + "\" + $this_computer + "_bh.zip"
 $ErrorLog = $temp + "\" + $this_computer + "_error.log"
 
-# get autoruns
-$arunsout = $temp + "\" + $this_computer + "_aruns.csv"
-& "$sharebin\autorunsc.exe" /accepteula -a -c -v -f '*' | set-content -encoding ascii $arunsout
 
-
-# get dnscache
-$dnsout = $temp + "\" + $this_computer + "_dnscache.txt"
-& ipconfig /displaydns | select-string 'Record Name' | foreach-object { $_.ToString().Split(' ')[-1] } | `
-  select -unique | sort | set-content -encoding ascii $dnsout
-
+# get prefetch listing
+$pfconf = (gp "hklm:\system\currentcontrolset\control\session manager\memory management\prefetchparameters").EnablePrefetcher 
+switch -Regex ($pfconf) {
+    "[1-3]" {
+        $pffiles = $temp + "\" + $this_computer + "_pffiles.txt"
+        ls $env:windir\Prefetch\*.pf | Set-Content -Encoding Ascii $pffiles
+    }
+    default { }
+}
 
 # get process data
 $procout = $temp + "\" + $this_computer + "_prox.xml"
@@ -66,26 +66,30 @@ get-process | export-clixml $procout
 $tlist = $temp + "\" + $this_computer + "_tlist.csv"
 & tasklist /v /fo csv | set-content -encoding ascii $tlist
 
+# get handle
+$handleout = $temp + "\" + $this_computer + "_handle.txt"
+& "$sharebin\handle.exe" /accepteula -a | set-content -encoding ascii $handleout
+
+# get dnscache
+$dnsout = $temp + "\" + $this_computer + "_dnscache.txt"
+& ipconfig /displaydns | select-string 'Record Name' | foreach-object { $_.ToString().Split(' ')[-1] } | `
+  select -unique | sort | set-content -encoding ascii $dnsout
 
 # get arp cache
 $arpout = $temp + "\" + $this_computer + "_arp.txt"
 & arp -a | set-content -encoding ascii $arpout
 
-
 # get netstat
 $netstatout = $temp + "\" + $this_computer + "_netstat.txt"
 & netstat -n -a -o -b | set-content -encoding ascii $netstatout
 
-
-# get handle
-$handleout = $temp + "\" + $this_computer + "_handle.txt"
-& "$sharebin\handle.exe" /accepteula -a | set-content -encoding ascii $handleout
-
+# get autoruns
+$arunsout = $temp + "\" + $this_computer + "_aruns.csv"
+& "$sharebin\autorunsc.exe" /accepteula -a -c -v -f '*' | set-content -encoding ascii $arunsout
 
 # get bits transfers
 $bitsxferout = $temp + "\" + $this_computer + "_bitsxfer.xml"
 Get-BitsTransfer -AllUsers | Export-Clixml $bitsxferout
-  
 
 # get service triggers
 $svctrigout = $temp + "\" + $this_computer + "_svctriggers.txt"
@@ -95,18 +99,15 @@ $($(foreach ($svc in (& c:\windows\system32\sc query)) {
   }
 })|?{$_.length -gt 1 -and $_ -notmatch "\[SC\] QueryServiceConfig2 SUCCESS|has not registered for any" }) | set-content -encoding Ascii $svctrigout
 
-
 # get service failure
 $svcfailout = $temp + "\" + $this_computer + "_svcfailout.txt"
 $($(foreach ($svc in (& c:\windows\system32\sc query)) { 
     if ($svc -match "SERVICE_NAME:\s(.*)") { 
         & c:\windows\system32\sc qfailure $($matches[1])}})) | set-content -Encoding Ascii $svcfailout
 
-
 # get wmi event consumers
 $wmievtconsmr = $temp + "\" + $this_computer + "_wmievtconsmr.xml"
 get-wmiobject -namespace root\subscription -computername $this_computer -query "select * from __EventConsumer" | export-clixml $wmievtconsmr
-
 
 # get powershell profiles
 $alluserprofile = ($env:windir + "\System32\WindowsPowershell\v1.0\Microsoft.Powershell_profile.ps1")
@@ -123,18 +124,6 @@ foreach($path in (gwmi win32_userprofile | select localpath -ExpandProperty loca
         $("Profile ${prfile}:"; gc $prfile) | Add-Content -Encoding Ascii $psuserprofiles
     }
 }
-
-
-# get prefetch listing
-$pfconf = (gp "hklm:\system\currentcontrolset\control\session manager\memory management\prefetchparameters").EnablePrefetcher 
-switch -Regex ($pfconf) {
-    "[1-3]" {
-        $pffiles = $temp + "\" + $this_computer + "_pffiles.txt"
-        ls $env:windir\Prefetch\*.pf | Set-Content -Encoding Ascii $pffiles
-    }
-    default { }
-}
-
 
 
 # check for locked files
