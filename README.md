@@ -3,19 +3,19 @@ Mal-Seine
 
 A reference script for collecting data from hosts in an organization when seining for evil.
 What does the script collect:
-  1. Autoruns using Sysinternals Autorunsc.exe
-  2. DNS Cache
-  3. Processes using Powershell Get-Process (includes modules, threads, etc.)
-  4. Processes using tasklist (includes owner)
-  5. ARP Cache
-  6. Netstat with process name and PID
-  7. Open handles using Sysinternals Handle.exe
-  8. Bits Transfers
-  9. Service triggers
-  10. Service failures
-  11. WMI Event Consumers
-  12. Powershell profiles
-  13. Prefetch
+  1. Prefetch
+  2. Processes using Powershell Get-Process (includes modules, threads, etc.)
+  3. Processes using tasklist (includes owner)
+  4. Open handles using Sysinternals Handle.exe
+  5. DNS cache
+  6. ARP cache
+  7. Netstat with process name and PID
+  8. Autoruns using Sysinternals Autorunsc.exe
+  9. Bits Transfers
+ 10. Service Triggers
+ 11. Service failures
+ 12. WMI Event Consumers
+ 13. Powershell profiles
 
 All output is copied to a zip archive for offline analysis.
 
