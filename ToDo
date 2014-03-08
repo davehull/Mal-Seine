@@ -1,4 +1,7 @@
-1. Incorporate post-processing modules into collection script, test out timing and utilization issues around doing 
+1. Incorporate post-processing modules into collection script, test timing and utilization issues around doing 
 conversions at the time of collection on the hosts where collection is happening. Possibly provide a command-line
 flag to make it optional to do the conversions at collection time.
-2. Add logic to pull local powershell profiles.
+2. Add sigcheck collector.
+
+
+Done: Add logic to pull local powershell profiles.
