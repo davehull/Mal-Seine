@@ -35,8 +35,8 @@ $sharename = "\\CONFIGURE\THIS"
 
 
 if ($sharename -match "CONFIGURE") {
-    write-host "`n[*] ERROR: You must edit the script and configure a share for the data to be written to, and for autorunsc.exe to be run from.`n"
-    exit
+    Write-Host "`n[*] ERROR: You must edit the script and configure a share for the data to be written to, and for autorunsc.exe to be run from.`n"
+    Exit
 }
 
 #put autorunsc.exe, handle.exe in the following path
@@ -50,7 +50,7 @@ $ErrorLog = $temp + "\" + $this_computer + "_error.log"
 
 # get prefetch listing
 $pfconf = (gp "hklm:\system\currentcontrolset\control\session manager\memory management\prefetchparameters").EnablePrefetcher 
-switch -Regex ($pfconf) {
+Switch -Regex ($pfconf) {
     "[1-3]" {
         $pffiles = $temp + "\" + $this_computer + "_pffiles.txt"
         ls $env:windir\Prefetch\*.pf | Set-Content -Encoding Ascii $pffiles
@@ -60,32 +60,32 @@ switch -Regex ($pfconf) {
 
 # get process data
 $procout = $temp + "\" + $this_computer + "_prox.xml"
-get-process | export-clixml $procout
+Get-Process | Export-Clixml $procout
 
 # tasklist gives username
 $tlist = $temp + "\" + $this_computer + "_tlist.csv"
-& tasklist /v /fo csv | set-content -encoding ascii $tlist
+& tasklist.exe /v /fo csv | Set-Content -Encoding Ascii $tlist
 
 # get handle
 $handleout = $temp + "\" + $this_computer + "_handle.txt"
-& "$sharebin\handle.exe" /accepteula -a | set-content -encoding ascii $handleout
+& "$sharebin\handle.exe" /accepteula -a | Set-Content -Encoding Ascii $handleout
 
 # get dnscache
 $dnsout = $temp + "\" + $this_computer + "_dnscache.txt"
-& ipconfig /displaydns | select-string 'Record Name' | foreach-object { $_.ToString().Split(' ')[-1] } | `
-  select -unique | sort | set-content -encoding ascii $dnsout
+& ipconfig.exe /displaydns | Select-String 'Record Name' | ForEach-Object { $_.ToString().Split(' ')[-1] } | `
+  select -Unique | sort | Set-Content -Encoding Ascii $dnsout
 
 # get arp cache
 $arpout = $temp + "\" + $this_computer + "_arp.txt"
-& arp -a | set-content -encoding ascii $arpout
+& ARP.EXE -a | Set-Content -Encoding Ascii $arpout
 
 # get netstat
 $netstatout = $temp + "\" + $this_computer + "_netstat.txt"
-& netstat -n -a -o -b | set-content -encoding ascii $netstatout
+& NETSTAT.EXE -n -a -o -b | Set-Content -Encoding Ascii $netstatout
 
 # get autoruns
 $arunsout = $temp + "\" + $this_computer + "_aruns.csv"
-& "$sharebin\autorunsc.exe" /accepteula -a -c -v -f '*' | set-content -encoding ascii $arunsout
+& "$sharebin\autorunsc.exe" /accepteula -a -c -v -f '*' | Set-Content -Encoding Ascii $arunsout
 
 # get bits transfers
 $bitsxferout = $temp + "\" + $this_computer + "_bitsxfer.xml"
@@ -97,23 +97,29 @@ $($(foreach ($svc in (& c:\windows\system32\sc query)) {
   if ($svc -match "SERVICE_NAME:\s(.*)") {
     & c:\windows\system32\sc qtriggerinfo $($matches[1])
   }
-})|?{$_.length -gt 1 -and $_ -notmatch "\[SC\] QueryServiceConfig2 SUCCESS|has not registered for any" }) | set-content -encoding Ascii $svctrigout
+})|?{$_.length -gt 1 -and $_ -notmatch "\[SC\] QueryServiceConfig2 SUCCESS|has not registered for any" }) | Set-Content -Encoding Ascii $svctrigout
 
 # get service failure
 $svcfailout = $temp + "\" + $this_computer + "_svcfailout.txt"
 $($(foreach ($svc in (& c:\windows\system32\sc query)) { 
     if ($svc -match "SERVICE_NAME:\s(.*)") { 
-        & c:\windows\system32\sc qfailure $($matches[1])}})) | set-content -Encoding Ascii $svcfailout
+        & c:\windows\system32\sc qfailure $($matches[1])}})) | Set-Content -Encoding Ascii $svcfailout
 
 # get wmi event consumers
 $wmievtconsmr = $temp + "\" + $this_computer + "_wmievtconsmr.xml"
-get-wmiobject -namespace root\subscription -computername $this_computer -query "select * from __EventConsumer" | export-clixml $wmievtconsmr
+Get-WmiObject -Namespace root\subscription -ComputerName $this_computer -Query "select * from __EventConsumer" | Export-Clixml $wmievtconsmr
+
+$wmievtfilter = $temp + "\" + $this_computer + "_wmievtfilter.xml"
+Get-WmiObject -Namespace root\subscription -ComputerName $this_computer -Query "select * from __EventFilter" | Export-Clixml $wmievtfilter
+
+$wmievtfltbind = $temp + "\" + $this_computer + "_wmievtfltbind.xml"
+Get-WmiObject -Namespace root\subscription -ComputerName $this_computer -Query "select * from __FilterToConsumerBinding" | Export-Clixml $wmievtfltbind
 
 # get powershell profiles
 $alluserprofile = ($env:windir + "\System32\WindowsPowershell\v1.0\Microsoft.Powershell_profile.ps1")
-if (test-path $alluserprofile) {
+if (Test-Path $alluserprofile) {
     $psalluserprofile = $temp + "\" + $this_computer + "_alluserprofile.txt"
-    gc $alluserprofile | set-content -encoding Ascii $psalluserprofile
+    gc $alluserprofile | Set-Content -Encoding Ascii $psalluserprofile
 }
 
 $psuserprofiles = $temp + "\" + $this_computer + "_userprofiles.txt"
@@ -158,12 +164,12 @@ function add-zip
 {
     param([string]$zipfilename)
 
-    if (-not (test-path($zipfilename))) {
-        set-content $zipfilename ("PK" + [char]5 + [char]6 + ("$([char]0)" * 18))
+    if (-not (Test-Path($zipfilename))) {
+        Set-Content $zipfilename ("PK" + [char]5 + [char]6 + ("$([char]0)" * 18))
         (dir $zipfilename).IsReadOnly = $false
     }
 
-    $shellApplication = new-object -com shell.application
+    $shellApplication = New-Object -com shell.application
     $zipPackage = $shellApplication.NameSpace($zipfilename)
 
     foreach($file in $input) {
