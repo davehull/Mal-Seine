@@ -1,6 +1,8 @@
 Mal-Seine
 =========
 
+If you're looking at this, you should check out Kansa (https://github.com/davehull/Kansa).
+
 A reference script for collecting data from hosts in an organization when seining for evil.
 What does the script collect:
   1. Prefetch
